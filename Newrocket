@@ -1,0 +1,86 @@
+# ---------------------------------------
+# Interactive Rocket Demo (No Parabola)
+# x-axis = Baking Soda (tsp)
+# y-axis = Rocket Height (feet)
+# ---------------------------------------
+
+!pip install ipywidgets > /dev/null 2>&1  # For Google Colab - ensures interactive widgets work
+import ipywidgets as widgets
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
+import matplotlib.offsetbox as offsetbox
+import numpy as np
+
+%matplotlib inline
+
+# Load rocket image (make sure rocket.png is in your working directory or path)
+try:
+    rocket_img = mpimg.imread('rocket.png')
+except FileNotFoundError:
+    rocket_img = None
+    print("Warning: 'rocket.png' not found. The code will run, but no rocket image will appear.")
+
+def rocket_height(baking_soda_tsp):
+    """
+    Simulate rocket height (in feet) as a function of baking soda (tsp),
+    with 2 cups of vinegar as a fixed quantity.
+
+    Uses a parabolic model internally to find an optimal ratio,
+    but we'll only plot the rocket, not the curve itself.
+    """
+    a = 0.5        # "Steepness" factor
+    k = 6          # Optimal amount of baking soda (tsp)
+    max_height = 20  # Maximum height (feet) at the optimal ratio
+   
+    # Calculate the height from a parabola
+    height = -a * (baking_soda_tsp - k)**2 + max_height
+   
+    return max(0, height)  # clamp at 0 (no negative height)
+
+def plot_rocket(baking_soda_tsp=6):
+    """
+    Plot only the rocket (no background parabola).
+    x-axis: baking_soda_tsp (0-12)
+    y-axis: rocket_height in feet
+    """
+    plt.clf()
+    fig, ax = plt.subplots()
+
+    # Calculate current rocket height
+    height = rocket_height(baking_soda_tsp)
+
+    # Place the rocket image at (baking_soda_tsp, height)
+    if rocket_img is not None:
+        imagebox = offsetbox.OffsetImage(rocket_img, zoom=0.10)  # Adjust zoom as needed
+        ab = offsetbox.AnnotationBbox(imagebox, (baking_soda_tsp, height),
+                                      frameon=False)
+        ax.add_artist(ab)
+    else:
+        # Fallback: Just plot a marker if we don't have the rocket image
+        ax.plot(baking_soda_tsp, height, marker="^", markersize=15)
+
+    # Annotate the rocket's exact height
+    ax.text(baking_soda_tsp + 0.2, height,
+            f"Height: {height:.1f} ft",
+            fontsize=9, va='bottom')
+
+    # Configure axes
+    ax.set_xlim(0, 12)
+    ax.set_ylim(0, 25)  # Some padding above the max 20 ft
+    ax.set_xlabel("Baking Soda (tsp)")
+    ax.set_ylabel("Rocket Height (feet)")
+    ax.set_title("2 Cups Vinegar + Baking Soda Rocket")
+
+    plt.show()
+
+# Create the interactive slider widget
+interactive_plot = widgets.interact(
+    plot_rocket,
+    baking_soda_tsp=widgets.IntSlider(
+        value=6,         # Start near the 'optimal' 6 tsp
+        min=0,
+        max=12,
+        step=1,
+        description="Baking Soda (tsp)"
+    ),
+)
